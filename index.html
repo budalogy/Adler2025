@@ -259,6 +259,38 @@
       margin-left: 6px;
     }
 
+    /* ====== 分析區塊 ====== */
+    .analysis-block {
+      margin-top: 24px;
+      padding: 16px 18px 18px;
+      border-radius: 12px;
+      background: #fff7e6;
+      border: 1px solid #ffe0b2;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .analysis-block h2 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+    }
+
+    .analysis-block h3 {
+      margin: 10px 0 6px;
+      font-size: 0.98rem;
+    }
+
+    .analysis-tag {
+      display: inline-block;
+      font-size: 0.78rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #ffe0b2;
+      color: #b35a00;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
     @media (max-width: 640px) {
       .container {
         padding: 16px 14px 22px;
@@ -334,22 +366,16 @@
       </div>
       <button class="primary-btn" id="next-btn" type="button" disabled>下一個情境 ▷</button>
     </div>
+
+    <!-- 分析區塊：完成所有情境後顯示 -->
+    <div id="analysis-block" class="analysis-block" style="display:none;"></div>
   </div>
 
   <script>
     // ====== 情境資料設定 ======
-    // 每個情境包含：
-    // title: 標題
-    // tag: 小標籤
-    // text: 敘述
-    // note: 補充（可為空字串）
-    // q1: 課題歸屬判斷
-    //   - choices: 選項文字陣列
-    //   - correctIndex: 正確答案索引
-    //   - explanation: 詳細解析
-    // q2: 自我對話選擇
-    //   - options: { text, isHealthy, explanation } 陣列
-    //   - explanation: 總結解析
+    // errorType：
+    //   selfBlame = 容易把別人課題扛在自己身上
+    //   cutOff    = 傾向切斷關係／放棄自己的課題
     const scenarios = [
       {
         title: "情境 1：同事已讀不回，你開始腦補",
@@ -367,6 +393,12 @@
             "主要是同事的課題：他要不要回覆、什麼時候回，是他的人生選擇。",
             "是共同課題：我們要一起合作把專案做好。"
           ],
+          // 對應上面 choices 的錯誤傾向
+          errorTypes: [
+            "selfBlame", // 把別人的反應當成自己責任
+            "",          // 正解
+            "selfBlame"  // 覺得一切都要一起扛，也容易過度負責
+          ],
           correctIndex: 1,
           explanation:
 "就課題分離的原則來說：\n\n" +
@@ -380,16 +412,19 @@
             {
               text: "一定是我哪裡做不好，他才不回我。我以後講話要更小心、討好一點，才不會被討厭。",
               isHealthy: false,
+              errorType: "selfBlame",
               explanation: "這句話把對方的沉默，全都解讀成『我有問題』，是把對方的情緒與反應扛到自己身上。"
             },
             {
               text: "他現在可能有別的事情在忙，要不要秒回是他的選擇。我的課題是確保專案順利，可以再換一個管道或時間確認就好。",
               isHealthy: true,
+              errorType: "",
               explanation: "這句話有把課題放回去：把『他何時回』放回他的人生，自己專心在『我如何把工作問清楚』。"
             },
             {
               text: "大家都已讀不回，那乾脆我也不要管了，放爛專案算了，反正又不是我一個人的事。",
               isHealthy: false,
+              errorType: "cutOff",
               explanation: "這句話雖然把別人的部分丟回去，但連自己的責任也一併放棄了，容易演變成消極與去責任化。"
             }
           ],
@@ -415,7 +450,12 @@
             "主要是主管的課題：他要用什麼表情與溝通方式，是他的選擇與責任。",
             "是共同課題：我們要一起把專案做完。"
           ],
-          correctIndex: 1, // 這裡要小心：真正最核心是「不要把主管的情緒當成自己的責任」，所以正確是選 2
+          errorTypes: [
+            "selfBlame",
+            "",
+            "selfBlame"
+          ],
+          correctIndex: 1,
           explanation:
 "【提醒】這一題最容易答錯，因為我們常習慣把長官的情緒當成自己的責任。\n\n" +
 "就課題分離的角度，\n" +
@@ -423,39 +463,33 @@
 "．你有沒有盡力把報告做好、是否需要主動詢問回饋，是『你的課題』。\n\n" +
 "因此最核心要分清的是：『主管的情緒，不等於我的價值；那是他要不要好好溝通的課題。』"
         },
-        // 修正：上面 explanation 已經寫成正解是 2，所以 correctIndex 應該是 1 (選項 index: 0,1,2)
-        // 我們在程式設計時要讓 correctIndex = 1
-      },
-    ];
-
-    // 修正上面的第二題（避免手滑錯誤）
-    scenarios[1].q1.correctIndex = 1;
-    scenarios[1].q2 = {
-      options: [
-        {
-          text: "一定是我表現太差，他才會整個早上不想理我。我真的很糟糕，也許根本不適合在這裡工作。",
-          isHealthy: false,
-          explanation: "這句話是把主管的情緒 100% 內化成自己的問題，很容易通往自我否定與無力感。"
-        },
-        {
-          text: "主管今天臉色不好，可能有他自己的壓力。這部分是他的課題。我的課題是確認報告是否需要調整，我可以主動約一個時間請他給具體回饋。",
-          isHealthy: true,
-          explanation: "這句話同時做到：不替主管的情緒負責，又主動對自己的工作負責，是比較成熟的課題分離。"
-        },
-        {
-          text: "既然他都不講話，那以後我也乾脆不要跟他說任何話，大家互相冷處理就好了。",
-          isHealthy: false,
-          explanation: "這是以冷漠回應冷漠，雖然暫時自保，但也放棄了改善關係與工作溝通的可能。"
-        }
-      ],
-      explanation:
+        q2: {
+          options: [
+            {
+              text: "一定是我表現太差，他才會整個早上不想理我。我真的很糟糕，也許根本不適合在這裡工作。",
+              isHealthy: false,
+              errorType: "selfBlame",
+              explanation: "這句話是把主管的情緒 100% 內化成自己的問題，很容易通往自我否定與無力感。"
+            },
+            {
+              text: "主管今天臉色不好，可能有他自己的壓力。這部分是他的課題。我的課題是確認報告是否需要調整，我可以主動約一個時間請他給具體回饋。",
+              isHealthy: true,
+              errorType: "",
+              explanation: "這句話同時做到：不替主管的情緒負責，又主動對自己的工作負責，是比較成熟的課題分離。"
+            },
+            {
+              text: "既然他都不講話，那以後我也乾脆不要跟他說任何話，大家互相冷處理就好了。",
+              isHealthy: false,
+              errorType: "cutOff",
+              explanation: "這是以冷漠回應冷漠，雖然暫時自保，但也放棄了改善關係與工作溝通的可能。"
+            }
+          ],
+          explanation:
 "課題分離不是要你「變成冷血、不在乎別人」，而是：\n" +
 "．不要替別人的情緒全權買單；\n" +
 "．但仍然對自己的專業與溝通負責，主動創造對話與回饋的機會。"
-    };
-
-    // 其他情境
-    scenarios.push(
+        }
+      },
       {
         title: "情境 3：家人覺得你讀這科沒前途",
         tag: "家庭期待",
@@ -471,6 +505,11 @@
             "主要是家人的課題：他們要不要焦慮，是他們的事，跟我無關。",
             "是共同課題：人生規劃這種事應該大家一起討論，所以不能分課題。"
           ],
+          errorTypes: [
+            "",          // 正解
+            "cutOff",    // 把全部丟給家人，否認任何互動
+            ""           // 比較是混淆，這邊不特別標
+          ],
           correctIndex: 0,
           explanation:
 "從課題分離的角度：\n" +
@@ -483,16 +522,19 @@
             {
               text: "家人都這樣說，一定是我選錯科系了。為了不讓他們失望，我應該按照他們的期待來換跑道。",
               isHealthy: false,
+              errorType: "selfBlame",
               explanation: "這句話把家人的焦慮與價值觀，全部當成自己的真理，長期會壓抑自我。"
             },
             {
               text: "家人會擔心，是出於他們的價值觀和世代經驗。那是他們的課題。我的課題是認真評估這個科系的可能性，想清楚自己願不願意承擔後果。",
               isHealthy: true,
+              errorType: "",
               explanation: "這句話既承認家人的出發點，也清楚界定：真正要為人生選擇負責的是自己。"
             },
             {
               text: "反正他們不懂，我就什麼都不跟他們說，全部自己來，不需要溝通。",
               isHealthy: false,
+              errorType: "cutOff",
               explanation: "這是用切斷關係來處理壓力，短期可以安靜，長期容易累積更多誤解。"
             }
           ],
@@ -517,6 +559,9 @@
             "主要是那位組員的課題：他要不要交出好作品、要不要被當，是他自己的事。",
             "其實兩者都有：但我只能控制自己的選擇與行動。"
           ],
+          errorTypes: [
+            "", "", ""  // 這一題錯誤不特別分類，只看對錯
+          ],
           correctIndex: 2,
           explanation:
 "在這個情境裡：\n" +
@@ -529,16 +574,19 @@
             {
               text: "都是他害的，以後我再也不要跟任何人合作，反正團隊工作只會拖累我。",
               isHealthy: false,
+              errorType: "cutOff",
               explanation: "這是把一次的經驗推論成絕對規則，也放棄了從合作中學習與協調的可能。"
             },
             {
               text: "他的擺爛是他的課題，老師怎麼看他是老師的課題。我的課題是如實說明狀況，並從這次經驗學會：下次一開始就要談清楚分工與責任。",
               isHealthy: true,
+              errorType: "",
               explanation: "這句話把責任分攤回到各自的課題，同時也從事件中抽出可學習的地方。"
             },
             {
               text: "既然他都不做，那我就全部包辦，這樣至少老師不會罵我，雖然我會累到爆。",
               isHealthy: false,
+              errorType: "selfBlame",
               explanation: "這是把別人的課題也攬過來，長期會讓你變成習慣『救火』的人，很容易累壞。"
             }
           ],
@@ -563,6 +611,11 @@
             "主要是酸民的課題：他們選擇用什麼方式表達，是他們要負責的行為。",
             "共同課題：網路互動本來就沒辦法分課題，只能認命。"
           ],
+          errorTypes: [
+            "selfBlame",
+            "",
+            "cutOff"
+          ],
           correctIndex: 1,
           explanation:
 "在網路互動中：\n" +
@@ -574,16 +627,19 @@
             {
               text: "原來我寫得這麼爛，連陌生人都看不下去，我真的不適合做這行。",
               isHealthy: false,
+              errorType: "selfBlame",
               explanation: "這是把匿名攻擊內化成對自我價值的全面否定，很傷。"
             },
             {
               text: "這些酸言酸語反映的是他們的狀態，不代表全部讀者。我的課題是檢視內容是否有可以調整的地方，並從有建設性的回饋中學習。",
               isHealthy: true,
+              errorType: "",
               explanation: "這句話把噪音與有用的回饋區分開來，同時保持自我與成長的空間。"
             },
             {
               text: "既然網路上都是酸民，那以後我就照樣回嗆，大家互噴就好。",
               isHealthy: false,
+              errorType: "cutOff",
               explanation: "這是用同樣的方式回擊，短期可能爽，長期會讓你也陷入攻擊循環。"
             }
           ],
@@ -608,6 +664,11 @@
             "主要是老師的課題：他要不要接得住不同意見，是他的專業能力問題。",
             "其實兩者都有，但我只需要負責調整自己能控制的部分。"
           ],
+          errorTypes: [
+            "selfBlame",
+            "cutOff",
+            ""
+          ],
           correctIndex: 2,
           explanation:
 "這裡有兩層課題：\n" +
@@ -620,16 +681,19 @@
             {
               text: "既然老師不喜歡我講話，那我乾脆在所有課都閉嘴，不要惹麻煩。",
               isHealthy: false,
+              errorType: "cutOff",
               explanation: "這是用自我壓抑來避免衝突，長期會讓你失去練習表達的機會。"
             },
             {
               text: "老師會有他的顧慮，那是他的課題。我的課題是學習在尊重他人與課堂氛圍的前提下，仍然保留自己的觀點與發聲空間。",
               isHealthy: true,
+              errorType: "",
               explanation: "這句話既承認老師的位置，也保護了自己的成長與表達權。"
             },
             {
               text: "既然他覺得我唱反調，那我就故意講更多，氣死他算了。",
               isHealthy: false,
+              errorType: "cutOff",
               explanation: "這變成『反向依附』：你的行為仍然被對方情緒綁架，只是方向相反。"
             }
           ],
@@ -639,7 +703,7 @@
 "．你也有權利調整出一種既照顧自己，又不必完全迎合他人的做法。"
         }
       }
-    );
+    ];
 
     // ====== DOM 綁定 ======
     const progressText = document.getElementById("progress-text");
@@ -666,11 +730,18 @@
     const summaryText = document.getElementById("summary-text");
     const scorePill = document.getElementById("score-pill");
 
+    const analysisBlock = document.getElementById("analysis-block");
+
     // ====== 狀態變數 ======
     let currentIndex = 0;
     let totalCorrect = 0;
     let q1Answered = false;
     let q2Answered = false;
+    let analysisShown = false;
+
+    // 記錄每一題作答，用來產生分析
+    // { scenario: number, question: "Q1"|"Q2", correct: boolean, errorType: string }
+    let answerLog = [];
 
     function renderScenario() {
       const s = scenarios[currentIndex];
@@ -735,18 +806,32 @@
       const buttons = q1OptionsContainer.querySelectorAll(".option-btn");
       buttons.forEach(b => b.classList.add("disabled"));
 
+      let correct = false;
+      let errorType = "";
+
       if (index === correctIndex) {
         btn.classList.add("correct");
         q1Feedback.textContent = "✅ 很好，你有把課題分清楚。";
         q1Feedback.classList.add("correct");
         totalCorrect++;
         scoreText.textContent = `目前正確：${totalCorrect} 題`;
+        correct = true;
       } else {
         btn.classList.add("incorrect");
         buttons[correctIndex].classList.add("correct");
         q1Feedback.textContent = "❌ 這樣想很自然，但再想想：誰最後要承擔這個結果？";
         q1Feedback.classList.add("incorrect");
+        if (s.q1.errorTypes && s.q1.errorTypes[index]) {
+          errorType = s.q1.errorTypes[index];
+        }
       }
+
+      answerLog.push({
+        scenario: currentIndex,
+        question: "Q1",
+        correct,
+        errorType
+      });
 
       q1Answered = true;
       updateNextButtonState();
@@ -760,12 +845,16 @@
       const buttons = q2OptionsContainer.querySelectorAll(".option-btn");
       buttons.forEach(b => b.classList.add("disabled"));
 
+      let correct = false;
+      let errorType = "";
+
       if (selected.isHealthy) {
         btn.classList.add("correct");
         q2Feedback.textContent = "✅ 很好，這句話有把課題放回去，也顧到自己的界線。";
         q2Feedback.classList.add("correct");
         totalCorrect++;
         scoreText.textContent = `目前正確：${totalCorrect} 題`;
+        correct = true;
       } else {
         btn.classList.add("incorrect");
         q2Feedback.textContent = "❌ 先看看解析，想想這句話會把誰的課題扛在自己身上。";
@@ -777,7 +866,18 @@
             buttons[idx].classList.add("correct");
           }
         });
+
+        if (selected.errorType) {
+          errorType = selected.errorType;
+        }
       }
+
+      answerLog.push({
+        scenario: currentIndex,
+        question: "Q2",
+        correct,
+        errorType
+      });
 
       q2Answered = true;
       updateNextButtonState();
@@ -788,9 +888,11 @@
         nextBtn.disabled = false;
 
         if (currentIndex === scenarios.length - 1) {
-          nextBtn.textContent = "完成本輪練習 🎉";
-          summaryText.textContent = "已完成所有情境！可以重新開始或和同學分享你的心得。";
-          scorePill.textContent = `總正確：${totalCorrect} / ${scenarios.length * 2}（兩題一組）`;
+          // 最後一題完成
+          nextBtn.textContent = "查看練習分析 📊";
+          summaryText.textContent = "已完成所有情境！按下「查看練習分析」看自己的學習傾向。";
+          const totalQuestions = scenarios.length * 2;
+          scorePill.textContent = `總正確：${totalCorrect} / ${totalQuestions}`;
         } else {
           nextBtn.textContent = "下一個情境 ▷";
           summaryText.textContent = "準備好後，可以進入下一個情境。";
@@ -802,23 +904,35 @@
     function goToNextScenario() {
       if (!(q1Answered && q2Answered)) return;
 
-      if (currentIndex < scenarios.length - 1) {
-        currentIndex++;
-        renderScenario();
-      } else {
-        // 已是最後一題，再按就回到第一題
-        currentIndex = 0;
-        totalCorrect = 0;
-        renderScenario();
-        scorePill.textContent = "新的一輪開始";
+      // 如果已經在最後一題，先顯示分析；再次點擊才重新開始
+      if (currentIndex === scenarios.length - 1) {
+        if (!analysisShown) {
+          generateAnalysis();
+          return;
+        } else {
+          restartAll();
+          analysisBlock.style.display = "none";
+          analysisShown = false;
+          return;
+        }
       }
+
+      currentIndex++;
+      renderScenario();
     }
 
     function restartAll() {
       currentIndex = 0;
       totalCorrect = 0;
+      q1Answered = false;
+      q2Answered = false;
+      answerLog = [];
+      analysisShown = false;
+      analysisBlock.style.display = "none";
       renderScenario();
       scorePill.textContent = "練習中";
+      summaryText.textContent = "完成步驟一與二後，按「下一個情境」。";
+      nextBtn.textContent = "下一個情境 ▷";
     }
 
     // 解析開關
@@ -832,6 +946,67 @@
 
     nextBtn.addEventListener("click", goToNextScenario);
     restartBtn.addEventListener("click", restartAll);
+
+    // ====== 產生學習分析 ======
+    function generateAnalysis() {
+      const totalQuestions = scenarios.length * 2;
+      const incorrect = totalQuestions - totalCorrect;
+
+      let selfBlameCount = 0;
+      let cutOffCount = 0;
+
+      answerLog.forEach(a => {
+        if (!a.correct && a.errorType) {
+          if (a.errorType === "selfBlame") selfBlameCount++;
+          if (a.errorType === "cutOff") cutOffCount++;
+        }
+      });
+
+      let html = "";
+      html += "<h2>🔍 練習分析：你的課題分離傾向</h2>";
+      html += `<p>本輪共完成 <b>${scenarios.length}</b> 個情境、<b>${totalQuestions}</b> 題小題，答對 <b>${totalCorrect}</b> 題。`;
+      if (incorrect === 0) {
+        html += " 幾乎全對，代表你在概念上已經相當成熟，可以把重點放在實際生活中的運用與細膩溝通。</p>";
+      } else {
+        html += ` 仍有 <b>${incorrect}</b> 題是容易「順著直覺」但不太符合課題分離精神的選擇。</p>`;
+      }
+
+      html += "<h3>一、常見卡關點</h3>";
+
+      if (selfBlameCount === 0 && cutOffCount === 0) {
+        html += "<p>你的錯誤多半不是固定模式，而是個別情境的判斷差異，可以回頭看看哪幾題最猶豫，思考自己在那種情境下的直覺反應。</p>";
+      } else {
+        if (selfBlameCount > 0) {
+          html += `<div><span class="analysis-tag">容易過度扛責 (${selfBlameCount} 題)</span>`;
+          html += "<p>你有幾題選到「把別人的情緒／行為全當成自己責任」的選項，例如：覺得別人不回訊息就是自己很差、別人不高興就一定是自己做錯。這代表你在關係裡<strong>很願意負責</strong>，但也可能過度把他人的感受攬到自己身上。</p>";
+          html += "</div>";
+        }
+        if (cutOffCount > 0) {
+          html += `<div><span class="analysis-tag">容易切斷或放爛 (${cutOffCount} 題)</span>`;
+          html += "<p>有一些情境，你會傾向選擇「乾脆不管、不合作、不說話」的選項，像是：以後都不要合作、在課堂上完全閉嘴、放爛專案。這顯示你很敏感，也在保護自己，但有時會連自己的課題一起放掉，少了透過溝通調整的空間。</p>";
+          html += "</div>";
+        }
+      }
+
+      html += "<h3>二、建議你這樣練習課題分離</h3>";
+      html += "<ol>";
+      html += "<li><b>每天選一個小事件，問自己兩個問題：</b><br>「這件事最後的結果由誰承擔？」→ 那就是誰的課題。<br>「我現在在煩惱的，是不是已經跑到別人的課題裡了？」</li>";
+      html += "<li><b>把自我對話換一個版本：</b><br>當你出現「一定是我不好」的念頭，可以練習改成：<br>「他可以有他的感受，那是他的課題；我的課題是＿＿＿＿。」<br>（把空格填上：我要把報告問清楚、我要好好睡覺、我要把自己的立場說清楚⋯⋯）</li>";
+      html += "<li><b>保留關係，但調整界線：</b><br>如果你常選到「切斷關係」的選項，試著問自己：<br>「有沒有一個版本，是我可以保留關係，但改變互動方式？」<br>例如：改成先用訊息約時間談、請老師／主管給具體回饋、設定自己回訊息的時段等。</li>";
+      html += "<li><b>與他人對照你的直覺：</b><br>可以截圖一兩題你最掙扎的情境，和同學或老師討論：「你會選哪一個？為什麼？」<br>透過別人的視角，看見自己習慣扛什麼、放掉什麼。</li>";
+      html += "</ol>";
+
+      html += "<h3>三、下一步怎麼用在真實生活？</h3>";
+      html += "<p>下次在 LINE 群組、課堂或打工場合遇到類似情境時，可以先在心裡默念：<br><b>① 先分課題 → ② 再想我要怎麼說／怎麼做 → ③ 事後再回頭檢視。</b><br>如果你願意，也可以再做一次這個練功房，看看在多想一層之後，你的選擇有沒有改變。</p>";
+
+      analysisBlock.innerHTML = html;
+      analysisBlock.style.display = "block";
+
+      analysisShown = true;
+      nextBtn.textContent = "重新開始本練功房 🔁";
+      summaryText.textContent = "你可以依照上面的分析調整自己的練習重點，或重新做一次看看是否改變。";
+      scorePill.textContent = `總正確：${totalCorrect} / ${totalQuestions}`;
+    }
 
     // 初始化
     renderScenario();
