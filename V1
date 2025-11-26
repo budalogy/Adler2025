@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-H-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>課題分離練功房｜互動練習</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* ====== 基本版型 ====== */
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f5f5f7;
+      color: #222;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 960px;
+      width: 100%;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      padding: 24px 24px 32px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      letter-spacing: .03em;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    /* ====== 進度條 ====== */
+    .progress-wrapper {
+      margin: 12px 0 20px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: #e5e5ea;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #4b7bec, #34c759);
+      transition: width 0.25s ease;
+    }
+
+    /* ====== 情境卡 ====== */
+    .card {
+      border-radius: 14px;
+      border: 1px solid #eee;
+      padding: 20px 18px 18px;
+      margin-bottom: 18px;
+      background: #fafafa;
+    }
+
+    .scenario-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 1.05rem;
+    }
+
+    .scenario-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e3f2fd;
+      color: #1565c0;
+      margin-bottom: 8px;
+    }
+
+    .scenario-text {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 4px;
+      white-space: pre-line;
+    }
+
+    .scenario-note {
+      font-size: 0.8rem;
+      color: #777;
+      margin-bottom: 0;
+    }
+
+    /* ====== 問題／選項 ====== */
+    .section-title {
+      font-size: 0.98rem;
+      font-weight: 600;
+      margin: 18px 0 6px;
+    }
+
+    .question-text {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .option-btn {
+      text-align: left;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .option-btn:hover {
+      border-color: #4b7bec;
+      box-shadow: 0 0 0 2px rgba(75,126,236,0.12);
+    }
+
+    .option-btn.correct {
+      border-color: #2ecc71;
+      background: #e9f9f1;
+      color: #145a32;
+    }
+
+    .option-btn.incorrect {
+      border-color: #ff3b30;
+      background: #ffecec;
+      color: #b21407;
+    }
+
+    .option-btn.disabled {
+      opacity: 0.7;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .feedback {
+      font-size: 0.86rem;
+      margin-top: 4px;
+      min-height: 1.2em;
+    }
+
+    .feedback.correct {
+      color: #188038;
+    }
+
+    .feedback.incorrect {
+      color: #b00020;
+    }
+
+    .explanation {
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      background: #f2f2f7;
+      color: #444;
+      display: none;
+    }
+
+    .explanation.visible {
+      display: block;
+    }
+
+    .toggle-explain {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: #007aff;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .toggle-explain:hover {
+      text-decoration: underline;
+    }
+
+    /* ====== 控制按鈕 ====== */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .primary-btn, .secondary-btn {
+      border-radius: 999px;
+      border: none;
+      padding: 9px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .primary-btn {
+      background: #4b7bec;
+      color: #fff;
+    }
+
+    .primary-btn:hover {
+      background: #3867d6;
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .secondary-btn {
+      background: #e5e5ea;
+      color: #333;
+    }
+
+    .secondary-btn:hover {
+      background: #d1d1d6;
+    }
+
+    .summary {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    .score-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 0.8rem;
+      margin-left: 6px;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px 14px 22px;
+      }
+      .controls {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+      .primary-btn, .secondary-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>課題分離練功房</h1>
+    <p class="subtitle">
+      透過一系列情境練習：「誰的課題？」與「我要怎麼把課題放回去？」<br>
+      建議先自己作答，再和同學或老師一起討論。
+    </p>
+
+    <div class="progress-wrapper">
+      <div class="progress-label">
+        <span id="progress-text">情境 1 / 6</span>
+        <span id="score-text">目前正確：0 題</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- 情境說明卡 -->
+    <div class="card" id="scenario-card">
+      <div class="scenario-tag" id="scenario-tag">職場情境</div>
+      <div class="scenario-title" id="scenario-title">情境標題</div>
+      <p class="scenario-text" id="scenario-text"></p>
+      <p class="scenario-note" id="scenario-note"></p>
+    </div>
+
+    <!-- 步驟一：判斷誰的課題 -->
+    <div class="card">
+      <div class="section-title">步驟一：這裡最核心的是誰的課題？</div>
+      <p class="question-text" id="q1-text">
+        根據「結果由誰承擔」的原則，先判斷這個情境中最重要要分清的是哪一個課題。
+      </p>
+      <div class="options" id="q1-options"></div>
+      <div class="feedback" id="q1-feedback"></div>
+      <button class="toggle-explain" id="q1-toggle-explain" type="button">顯示／隱藏解析</button>
+      <div class="explanation" id="q1-explanation"></div>
+    </div>
+
+    <!-- 步驟二：選一個比較健康的自我對話 -->
+    <div class="card">
+      <div class="section-title">步驟二：哪一句自我對話比較符合課題分離？</div>
+      <p class="question-text" id="q2-text">
+        想像你就是故事中的「你」，下面幾句話都是可能的內心 OS。<br>
+        請挑選一句「比較健康、比較符合課題分離精神」的自我對話。
+      </p>
+      <div class="options" id="q2-options"></div>
+      <div class="feedback" id="q2-feedback"></div>
+      <button class="toggle-explain" id="q2-toggle-explain" type="button">顯示／隱藏解析</button>
+      <div class="explanation" id="q2-explanation"></div>
+    </div>
+
+    <div class="controls">
+      <button class="secondary-btn" id="restart-btn" type="button">重新開始</button>
+      <div style="flex:1"></div>
+      <div class="summary">
+        <span id="summary-text">完成步驟一與二後，按「下一個情境」。</span>
+        <span class="score-pill" id="score-pill">練習中</span>
+      </div>
+      <button class="primary-btn" id="next-btn" type="button" disabled>下一個情境 ▷</button>
+    </div>
+  </div>
+
+  <script>
+    // ====== 情境資料設定 ======
+    // 每個情境包含：
+    // title: 標題
+    // tag: 小標籤
+    // text: 敘述
+    // note: 補充（可為空字串）
+    // q1: 課題歸屬判斷
+    //   - choices: 選項文字陣列
+    //   - correctIndex: 正確答案索引
+    //   - explanation: 詳細解析
+    // q2: 自我對話選擇
+    //   - options: { text, isHealthy, explanation } 陣列
+    //   - explanation: 總結解析
+    const scenarios = [
+      {
+        title: "情境 1：同事已讀不回，你開始腦補",
+        tag: "職場協作",
+        text:
+`你在一個專案小組裡負責整理資料。今天下午，你在 LINE 工作群組裡詢問一位同事：
+「這份表格有幾個欄位我不太確定，可以幫我看一下嗎？」
+
+過了兩個小時，你看到訊息顯示「已讀 7」，但那位同事一直沒有回。
+你開始反覆打開群組，心裡想：「是不是我問得太蠢？是不是大家都覺得我很煩？」`,
+        note: "你現在要練習分清楚：什麼是『我的課題』，什麼是『別人的課題』。",
+        q1: {
+          choices: [
+            "主要是我的課題：我要想辦法讓每個人都立刻回我、喜歡我。",
+            "主要是同事的課題：他要不要回覆、什麼時候回，是他的人生選擇。",
+            "是共同課題：我們要一起合作把專案做好。"
+          ],
+          correctIndex: 1,
+          explanation:
+"就課題分離的原則來說：\n\n" +
+"．他要不要立刻回訊息、要用什麼態度回覆，是「他的課題」，最後後果（例如別人覺得他合作不好）是他承擔。\n" +
+"．你要不要把專案問清楚、有沒有試著透過其他管道確認資料，是「你的課題」。\n\n" +
+"在這個情境中，你腦中一直轉的是「他喜不喜歡我」，比起專案本身更被他人的感受綁架，\n" +
+"所以這一題最重要先釐清的是：『對方回不回，是對方的課題，不是我必須控制的東西。』"
+        },
+        q2: {
+          options: [
+            {
+              text: "一定是我哪裡做不好，他才不回我。我以後講話要更小心、討好一點，才不會被討厭。",
+              isHealthy: false,
+              explanation: "這句話把對方的沉默，全都解讀成『我有問題』，是把對方的情緒與反應扛到自己身上。"
+            },
+            {
+              text: "他現在可能有別的事情在忙，要不要秒回是他的選擇。我的課題是確保專案順利，可以再換一個管道或時間確認就好。",
+              isHealthy: true,
+              explanation: "這句話有把課題放回去：把『他何時回』放回他的人生，自己專心在『我如何把工作問清楚』。"
+            },
+            {
+              text: "大家都已讀不回，那乾脆我也不要管了，放爛專案算了，反正又不是我一個人的事。",
+              isHealthy: false,
+              explanation: "這句話雖然把別人的部分丟回去，但連自己的責任也一併放棄了，容易演變成消極與去責任化。"
+            }
+          ],
+          explanation:
+"健康的課題分離不是『全部切割、不在乎任何人』，而是：\n" +
+"．承認對方有權決定怎麼回應（他的課題），\n" +
+"．也承認自己有責任把工作處理好（我的課題），\n" +
+"．在兩者之間找到行動空間，而不是一直猜別人心情或完全放棄。"
+        }
+      },
+      {
+        title: "情境 2：主管臉很臭，整天不講話",
+        tag: "權力與情緒",
+        text:
+`你進公司實習一個月。今天早上開會時，主管全程臉色很臭，也幾乎沒有對你說話。
+你遞交的報告他也只說了一句：「收到。」
+
+你整天都很不安，心裡想：「完了，他一定超討厭我。是不是我不適合這份工作？」`,
+        note: "這一題試著分清楚：主管的情緒 vs 你的工作表現，是誰的課題？",
+        q1: {
+          choices: [
+            "主要是我的課題：我要負責讓主管一直保持好心情。",
+            "主要是主管的課題：他要用什麼表情與溝通方式，是他的選擇與責任。",
+            "是共同課題：我們要一起把專案做完。"
+          ],
+          correctIndex: 1, // 這裡要小心：真正最核心是「不要把主管的情緒當成自己的責任」，所以正確是選 2
+          explanation:
+"【提醒】這一題最容易答錯，因為我們常習慣把長官的情緒當成自己的責任。\n\n" +
+"就課題分離的角度，\n" +
+"．主管今天臉臭、要不要說明，他怎麼管理自己的情緒與團隊氣氛，是『他的課題』。\n" +
+"．你有沒有盡力把報告做好、是否需要主動詢問回饋，是『你的課題』。\n\n" +
+"因此最核心要分清的是：『主管的情緒，不等於我的價值；那是他要不要好好溝通的課題。』"
+        },
+        // 修正：上面 explanation 已經寫成正解是 2，所以 correctIndex 應該是 1 (選項 index: 0,1,2)
+        // 我們在程式設計時要讓 correctIndex = 1
+      },
+    ];
+
+    // 修正上面的第二題（避免手滑錯誤）
+    scenarios[1].q1.correctIndex = 1;
+    scenarios[1].q2 = {
+      options: [
+        {
+          text: "一定是我表現太差，他才會整個早上不想理我。我真的很糟糕，也許根本不適合在這裡工作。",
+          isHealthy: false,
+          explanation: "這句話是把主管的情緒 100% 內化成自己的問題，很容易通往自我否定與無力感。"
+        },
+        {
+          text: "主管今天臉色不好，可能有他自己的壓力。這部分是他的課題。我的課題是確認報告是否需要調整，我可以主動約一個時間請他給具體回饋。",
+          isHealthy: true,
+          explanation: "這句話同時做到：不替主管的情緒負責，又主動對自己的工作負責，是比較成熟的課題分離。"
+        },
+        {
+          text: "既然他都不講話，那以後我也乾脆不要跟他說任何話，大家互相冷處理就好了。",
+          isHealthy: false,
+          explanation: "這是以冷漠回應冷漠，雖然暫時自保，但也放棄了改善關係與工作溝通的可能。"
+        }
+      ],
+      explanation:
+"課題分離不是要你「變成冷血、不在乎別人」，而是：\n" +
+"．不要替別人的情緒全權買單；\n" +
+"．但仍然對自己的專業與溝通負責，主動創造對話與回饋的機會。"
+    };
+
+    // 其他情境
+    scenarios.push(
+      {
+        title: "情境 3：家人覺得你讀這科沒前途",
+        tag: "家庭期待",
+        text:
+`你念的是自己喜歡的科系，但家人常說：
+「你讀這個以後要吃什麼？你看某某人的小孩讀商學院，現在薪水多好。」 
+
+你一方面覺得很煩，但另一方面也會懷疑自己是不是做錯選擇。`,
+        note: "這一題練習分開：『家人的期待』和『你對自己人生的選擇』。",
+        q1: {
+          choices: [
+            "主要是我的課題：我要決定自己想成為什麼樣的人，為此負責。",
+            "主要是家人的課題：他們要不要焦慮，是他們的事，跟我無關。",
+            "是共同課題：人生規劃這種事應該大家一起討論，所以不能分課題。"
+          ],
+          correctIndex: 0,
+          explanation:
+"從課題分離的角度：\n" +
+"．『你要走什麼樣的職涯路線，願不願意承擔相關結果』，這是你的課題；\n" +
+"．『家人是否願意處理自己的焦慮、用什麼方式表達關心』，是他們的課題。\n\n" +
+"所以這一題最核心要分清的是：『我的人生選擇，最終要由我來承擔結果』，不能完全照單全收別人的劇本。"
+        },
+        q2: {
+          options: [
+            {
+              text: "家人都這樣說，一定是我選錯科系了。為了不讓他們失望，我應該按照他們的期待來換跑道。",
+              isHealthy: false,
+              explanation: "這句話把家人的焦慮與價值觀，全部當成自己的真理，長期會壓抑自我。"
+            },
+            {
+              text: "家人會擔心，是出於他們的價值觀和世代經驗。那是他們的課題。我的課題是認真評估這個科系的可能性，想清楚自己願不願意承擔後果。",
+              isHealthy: true,
+              explanation: "這句話既承認家人的出發點，也清楚界定：真正要為人生選擇負責的是自己。"
+            },
+            {
+              text: "反正他們不懂，我就什麼都不跟他們說，全部自己來，不需要溝通。",
+              isHealthy: false,
+              explanation: "這是用切斷關係來處理壓力，短期可以安靜，長期容易累積更多誤解。"
+            }
+          ],
+          explanation:
+"課題分離不等於『我管你死活』，而是：\n" +
+"．承認彼此有各自的課題與界線；\n" +
+"．在界線清楚的前提下，還是可以選擇溝通、分享與協調。"
+        }
+      },
+      {
+        title: "情境 4：組員擺爛，報告品質拉低",
+        tag: "團隊合作",
+        text:
+`你和三位同學一起做期末報告，其中一位同學幾乎不來開會、交稿也常遲交。最後上台的是你，
+但成品整體品質被老師批評「有點潦草、沒有協調感」。
+
+你心裡很生氣，也很想大喊：「都是他害的！」`,
+        note: "這題練習分清：你能控制的 vs 你不能控制的部分。",
+        q1: {
+          choices: [
+            "主要是我的課題：我要決定自己要不要繼續跟這位組員合作，以及上台時怎麼面對老師。",
+            "主要是那位組員的課題：他要不要交出好作品、要不要被當，是他自己的事。",
+            "其實兩者都有：但我只能控制自己的選擇與行動。"
+          ],
+          correctIndex: 2,
+          explanation:
+"在這個情境裡：\n" +
+"．那位同學的出席率與投入程度，是他的課題；\n" +
+"．你要不要一個人扛全部、要不要事先跟老師說明情況、要不要下次換合作對象，是你的課題。\n\n" +
+"更貼近現實的答案是：兩者都有課題，但你能真正操作的，只有自己這一側。"
+        },
+        q2: {
+          options: [
+            {
+              text: "都是他害的，以後我再也不要跟任何人合作，反正團隊工作只會拖累我。",
+              isHealthy: false,
+              explanation: "這是把一次的經驗推論成絕對規則，也放棄了從合作中學習與協調的可能。"
+            },
+            {
+              text: "他的擺爛是他的課題，老師怎麼看他是老師的課題。我的課題是如實說明狀況，並從這次經驗學會：下次一開始就要談清楚分工與責任。",
+              isHealthy: true,
+              explanation: "這句話把責任分攤回到各自的課題，同時也從事件中抽出可學習的地方。"
+            },
+            {
+              text: "既然他都不做，那我就全部包辦，這樣至少老師不會罵我，雖然我會累到爆。",
+              isHealthy: false,
+              explanation: "這是把別人的課題也攬過來，長期會讓你變成習慣『救火』的人，很容易累壞。"
+            }
+          ],
+          explanation:
+"課題分離不是『切割合作』，而是：\n" +
+"．承認每個人對自己行為負責；\n" +
+"．你可以選擇更健康的合作方式，而不是一味扛起所有後果。"
+        }
+      },
+      {
+        title: "情境 5：社群貼文被酸民攻擊",
+        tag: "網路互動",
+        text:
+`你在實習單位幫忙經營社群，最近發了一篇你很用心寫的貼文，底下出現幾則酸民留言：
+「這在寫什麼垃圾」「小編有讀書嗎？」等等。
+
+你看了很難過，覺得自己是不是完全不適合做內容。`,
+        note: "這題練習分清：他人的情緒與攻擊 vs 你對自己作品的責任。",
+        q1: {
+          choices: [
+            "主要是我的課題：如果我夠厲害，就不會有人酸我。",
+            "主要是酸民的課題：他們選擇用什麼方式表達，是他們要負責的行為。",
+            "共同課題：網路互動本來就沒辦法分課題，只能認命。"
+          ],
+          correctIndex: 1,
+          explanation:
+"在網路互動中：\n" +
+"．你有責任為自己的內容品質負責，但沒有責任為別人選擇用什麼語氣留言負責；\n" +
+"．酸民選擇用攻擊式語言，是他們的課題，最後會影響他們在網路上的形象與人際。"
+        },
+        q2: {
+          options: [
+            {
+              text: "原來我寫得這麼爛，連陌生人都看不下去，我真的不適合做這行。",
+              isHealthy: false,
+              explanation: "這是把匿名攻擊內化成對自我價值的全面否定，很傷。"
+            },
+            {
+              text: "這些酸言酸語反映的是他們的狀態，不代表全部讀者。我的課題是檢視內容是否有可以調整的地方，並從有建設性的回饋中學習。",
+              isHealthy: true,
+              explanation: "這句話把噪音與有用的回饋區分開來，同時保持自我與成長的空間。"
+            },
+            {
+              text: "既然網路上都是酸民，那以後我就照樣回嗆，大家互噴就好。",
+              isHealthy: false,
+              explanation: "這是用同樣的方式回擊，短期可能爽，長期會讓你也陷入攻擊循環。"
+            }
+          ],
+          explanation:
+"健康的課題分離會協助你：\n" +
+"．不把無差別攻擊當成『全部真相』；\n" +
+"．也不因此完全拒絕學習與調整，而是有選擇地吸收有用的部分。"
+        }
+      },
+      {
+        title: "情境 6：老師不喜歡你的表現風格",
+        tag: "學習與自我價值",
+        text:
+`你在課堂上常主動發言、提出不同意見，但有時老師會說：
+「你可不可以不要一直唱反調？其他同學會不好意思表達。」
+
+你開始懷疑：「是不是我太愛出風頭？」`,
+        note: "這題練習分清：『表達風格的調整』與『自我價值感』是不同層次。",
+        q1: {
+          choices: [
+            "主要是我的課題：我要學習在合適的場合與方式表達自己。",
+            "主要是老師的課題：他要不要接得住不同意見，是他的專業能力問題。",
+            "其實兩者都有，但我只需要負責調整自己能控制的部分。"
+          ],
+          correctIndex: 2,
+          explanation:
+"這裡有兩層課題：\n" +
+"．老師如何看待不同意見、如何引導討論，是他的課題；\n" +
+"．你怎麼表達、要不要學習更兼顧別人感受，是你的課題。\n\n" +
+"課題分離幫你避免把事情簡化成：『老師不喜歡我，所以我整個人都不好。』"
+        },
+        q2: {
+          options: [
+            {
+              text: "既然老師不喜歡我講話，那我乾脆在所有課都閉嘴，不要惹麻煩。",
+              isHealthy: false,
+              explanation: "這是用自我壓抑來避免衝突，長期會讓你失去練習表達的機會。"
+            },
+            {
+              text: "老師會有他的顧慮，那是他的課題。我的課題是學習在尊重他人與課堂氛圍的前提下，仍然保留自己的觀點與發聲空間。",
+              isHealthy: true,
+              explanation: "這句話既承認老師的位置，也保護了自己的成長與表達權。"
+            },
+            {
+              text: "既然他覺得我唱反調，那我就故意講更多，氣死他算了。",
+              isHealthy: false,
+              explanation: "這變成『反向依附』：你的行為仍然被對方情緒綁架，只是方向相反。"
+            }
+          ],
+          explanation:
+"真正的課題分離，是讓你有能力同時看見：\n" +
+"．別人有別人的限制與立場；\n" +
+"．你也有權利調整出一種既照顧自己，又不必完全迎合他人的做法。"
+        }
+      }
+    );
+
+    // ====== DOM 綁定 ======
+    const progressText = document.getElementById("progress-text");
+    const scoreText = document.getElementById("score-text");
+    const progressFill = document.getElementById("progress-fill");
+
+    const scenarioTag = document.getElementById("scenario-tag");
+    const scenarioTitle = document.getElementById("scenario-title");
+    const scenarioText = document.getElementById("scenario-text");
+    const scenarioNote = document.getElementById("scenario-note");
+
+    const q1OptionsContainer = document.getElementById("q1-options");
+    const q1Feedback = document.getElementById("q1-feedback");
+    const q1Explain = document.getElementById("q1-explanation");
+    const q1ToggleExplain = document.getElementById("q1-toggle-explain");
+
+    const q2OptionsContainer = document.getElementById("q2-options");
+    const q2Feedback = document.getElementById("q2-feedback");
+    const q2Explain = document.getElementById("q2-explanation");
+    const q2ToggleExplain = document.getElementById("q2-toggle-explain");
+
+    const nextBtn = document.getElementById("next-btn");
+    const restartBtn = document.getElementById("restart-btn");
+    const summaryText = document.getElementById("summary-text");
+    const scorePill = document.getElementById("score-pill");
+
+    // ====== 狀態變數 ======
+    let currentIndex = 0;
+    let totalCorrect = 0;
+    let q1Answered = false;
+    let q2Answered = false;
+
+    function renderScenario() {
+      const s = scenarios[currentIndex];
+
+      // 更新頭部資訊
+      progressText.textContent = `情境 ${currentIndex + 1} / ${scenarios.length}`;
+      const progressPercent = ((currentIndex) / scenarios.length) * 100;
+      progressFill.style.width = `${progressPercent}%`;
+
+      scoreText.textContent = `目前正確：${totalCorrect} 題`;
+
+      // 更新情境內容
+      scenarioTag.textContent = s.tag;
+      scenarioTitle.textContent = s.title;
+      scenarioText.textContent = s.text;
+      scenarioNote.textContent = s.note || "";
+
+      // 清空與重建 Q1 選項
+      q1OptionsContainer.innerHTML = "";
+      q1Feedback.textContent = "";
+      q1Feedback.className = "feedback";
+      q1Explain.textContent = s.q1.explanation;
+      q1Explain.classList.remove("visible");
+
+      s.q1.choices.forEach((choice, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "option-btn";
+        btn.textContent = choice;
+        btn.addEventListener("click", () => handleQ1Click(index, btn));
+        q1OptionsContainer.appendChild(btn);
+      });
+
+      // 清空與重建 Q2 選項
+      q2OptionsContainer.innerHTML = "";
+      q2Feedback.textContent = "";
+      q2Feedback.className = "feedback";
+      q2Explain.textContent = s.q2.explanation;
+      q2Explain.classList.remove("visible");
+
+      s.q2.options.forEach((opt, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "option-btn";
+        btn.textContent = opt.text;
+        btn.addEventListener("click", () => handleQ2Click(index, btn));
+        q2OptionsContainer.appendChild(btn);
+      });
+
+      // 重置狀態
+      q1Answered = false;
+      q2Answered = false;
+      nextBtn.disabled = true;
+      summaryText.textContent = "完成步驟一與二後，按「下一個情境」。";
+    }
+
+    function handleQ1Click(index, btn) {
+      if (q1Answered) return;
+      const s = scenarios[currentIndex];
+      const correctIndex = s.q1.correctIndex;
+
+      const buttons = q1OptionsContainer.querySelectorAll(".option-btn");
+      buttons.forEach(b => b.classList.add("disabled"));
+
+      if (index === correctIndex) {
+        btn.classList.add("correct");
+        q1Feedback.textContent = "✅ 很好，你有把課題分清楚。";
+        q1Feedback.classList.add("correct");
+        totalCorrect++;
+        scoreText.textContent = `目前正確：${totalCorrect} 題`;
+      } else {
+        btn.classList.add("incorrect");
+        buttons[correctIndex].classList.add("correct");
+        q1Feedback.textContent = "❌ 這樣想很自然，但再想想：誰最後要承擔這個結果？";
+        q1Feedback.classList.add("incorrect");
+      }
+
+      q1Answered = true;
+      updateNextButtonState();
+    }
+
+    function handleQ2Click(index, btn) {
+      if (q2Answered) return;
+      const s = scenarios[currentIndex];
+      const selected = s.q2.options[index];
+
+      const buttons = q2OptionsContainer.querySelectorAll(".option-btn");
+      buttons.forEach(b => b.classList.add("disabled"));
+
+      if (selected.isHealthy) {
+        btn.classList.add("correct");
+        q2Feedback.textContent = "✅ 很好，這句話有把課題放回去，也顧到自己的界線。";
+        q2Feedback.classList.add("correct");
+        totalCorrect++;
+        scoreText.textContent = `目前正確：${totalCorrect} 題`;
+      } else {
+        btn.classList.add("incorrect");
+        q2Feedback.textContent = "❌ 先看看解析，想想這句話會把誰的課題扛在自己身上。";
+        q2Feedback.classList.add("incorrect");
+
+        // 標出正解
+        s.q2.options.forEach((opt, idx) => {
+          if (opt.isHealthy) {
+            buttons[idx].classList.add("correct");
+          }
+        });
+      }
+
+      q2Answered = true;
+      updateNextButtonState();
+    }
+
+    function updateNextButtonState() {
+      if (q1Answered && q2Answered) {
+        nextBtn.disabled = false;
+
+        if (currentIndex === scenarios.length - 1) {
+          nextBtn.textContent = "完成本輪練習 🎉";
+          summaryText.textContent = "已完成所有情境！可以重新開始或和同學分享你的心得。";
+          scorePill.textContent = `總正確：${totalCorrect} / ${scenarios.length * 2}（兩題一組）`;
+        } else {
+          nextBtn.textContent = "下一個情境 ▷";
+          summaryText.textContent = "準備好後，可以進入下一個情境。";
+          scorePill.textContent = "持續練功中";
+        }
+      }
+    }
+
+    function goToNextScenario() {
+      if (!(q1Answered && q2Answered)) return;
+
+      if (currentIndex < scenarios.length - 1) {
+        currentIndex++;
+        renderScenario();
+      } else {
+        // 已是最後一題，再按就回到第一題
+        currentIndex = 0;
+        totalCorrect = 0;
+        renderScenario();
+        scorePill.textContent = "新的一輪開始";
+      }
+    }
+
+    function restartAll() {
+      currentIndex = 0;
+      totalCorrect = 0;
+      renderScenario();
+      scorePill.textContent = "練習中";
+    }
+
+    // 解析開關
+    q1ToggleExplain.addEventListener("click", () => {
+      q1Explain.classList.toggle("visible");
+    });
+
+    q2ToggleExplain.addEventListener("click", () => {
+      q2Explain.classList.toggle("visible");
+    });
+
+    nextBtn.addEventListener("click", goToNextScenario);
+    restartBtn.addEventListener("click", restartAll);
+
+    // 初始化
+    renderScenario();
+  </script>
+</body>
+</html>
